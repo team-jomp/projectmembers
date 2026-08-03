@@ -6,6 +6,6 @@
     "cancelledTemp": 6,
     "cancelled": 638,
     "failedPaymentNotice": 0,
-    "failedPaymentAutoCancel": null
+    "failedPaymentAutoCancel": 0
   }
 ]
