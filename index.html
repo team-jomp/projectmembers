@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Members — Status Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Bitter:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #fbf5ee;
+    --panel: #ffffff;
+    --panel-border: #e8dcd2;
+    --text: #215757;
+    --text-dim: #6f8a8a;
+    --rose: #cbaba5;
+    --teal: #62a1a1;
+    --rust: #9b614c;
+    --active: #62a1a1;
+    --paused: #cbaba5;
+    --grace: #9b614c;
+    --cancelled: #7a4a3a;
+    --failed1: #215757;
+    --failed2: #143d3d;
+    --accent: #62a1a1;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Bitter', Georgia, serif; margin: 0; padding: 28px 24px 48px; }
+  .display { font-family: 'Young Serif', Georgia, serif; }
+  .num { font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+
+  .pm-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+  .pm-brand img.logo { height: 46px; width: auto; }
+  .pm-flourish { opacity: 0.55; margin: -6px 0 18px 2px; }
+  .pm-flourish img { height: 28px; width: auto; transform: scaleX(-1); }
+
+  .pm-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; }
+  .pm-header h1 { font-size: 24px; margin: 0 0 4px; font-weight: 400; color: var(--text); }
+  .pm-header .sub { color: var(--text-dim); font-size: 13px; }
+  .pm-meta { text-align: right; font-size: 12px; color: var(--text-dim); }
+  .pm-refresh-btn { margin-top: 6px; background: var(--teal); color: #fff; border: none; padding: 8px 16px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: 'Bitter', serif; }
+  .pm-refresh-btn:hover { filter: brightness(1.08); }
+
+  .pm-meter { display: flex; height: 34px; border-radius: 7px; overflow: hidden; margin-bottom: 8px; border: 1px solid var(--panel-border); }
+  .pm-meter div { transition: width 0.4s ease; }
+  .pm-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-dim); margin-bottom: 26px; }
+  .pm-legend span.dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+  .pm-cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 28px; }
+  @media (max-width: 900px) { .pm-cards { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .pm-cards { grid-template-columns: repeat(2, 1fr); } }
+  .pm-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 14px 14px 12px; box-shadow: 0 1px 3px rgba(33,87,87,0.05); }
+  .pm-card .label { font-size: 10.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; font-weight: 600; }
+  .pm-card .value { font-size: 26px; font-weight: 700; line-height: 1; }
+  .pm-card .bar { height: 3px; border-radius: 2px; margin-top: 10px; }
+  .pm-card .unconfirmed { font-size: 10px; color: var(--rust); margin-top: 6px; }
+  .pm-card .delta { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+
+  .pm-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .pm-tabs { display: flex; gap: 6px; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px; padding: 3px; }
+  .pm-tabs button { background: none; border: none; color: var(--text-dim); font-family: 'Bitter', serif; font-size: 12.5px; padding: 6px 14px; border-radius: 6px; cursor: pointer; }
+  .pm-tabs button.active { background: var(--teal); color: #fff; font-weight: 600; }
+
+  .pm-range-controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 12.5px; }
+  .pm-range-controls label { display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
+  .pm-range-controls input[type="date"] { background: var(--bg); border: 1px solid var(--panel-border); color: var(--text); border-radius: 6px; padding: 5px 8px; font-family: 'Bitter', serif; font-size: 12.5px; }
+  .pm-range-presets { display: flex; gap: 6px; }
+  .pm-range-presets button { background: transparent; border: 1px solid var(--panel-border); color: var(--text-dim); border-radius: 6px; padding: 4px 10px; font-size: 11.5px; cursor: pointer; font-family: 'Bitter', serif; }
+  .pm-range-presets button:hover { border-color: var(--teal); color: var(--text); }
+
+  .pm-chart-wrap { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 16px; margin-bottom: 22px; height: 260px; }
+
+  table.pm-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.pm-table th, table.pm-table td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--panel-border); }
+  table.pm-table th:first-child, table.pm-table td:first-child { text-align: left; }
+  table.pm-table th { color: var(--text-dim); font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  table.pm-table tbody tr:hover { background: rgba(98,161,161,0.06); }
+
+  .pm-footnote { margin-top: 20px; font-size: 11.5px; color: var(--text-dim); line-height: 1.6; border-top: 1px solid var(--panel-border); padding-top: 14px; }
+  .pm-empty { color: var(--text-dim); font-size: 13px; padding: 20px 0; }
+</style>
+</head>
+<body>
+<div class="wrap" id="pm-dash-root"></div>
+
+<script>
+(function(){
+  const SEGMENTS = {
+    active:                  { name: 'Active',                        color: 'var(--active)' },
+    paused:                  { name: 'Paused',                        color: 'var(--paused)' },
+    cancelledTemp:           { name: 'Cancelled (grace period)',      color: 'var(--grace)' },
+    cancelled:               { name: 'Cancelled',                     color: 'var(--cancelled)' },
+    failedPaymentNotice:     { name: '1st Failed Payment Notice',      color: 'var(--failed1)' },
+    failedPaymentAutoCancel: { name: 'Failed Payment \u2192 Auto Cancel', color: 'var(--failed2)' }
+  };
+  let chart = null;
+  let currentView = 'daily';
+  let rangeFrom = null, rangeTo = null;
+  let history = [];
+
+  const root = document.getElementById('pm-dash-root');
+
+  function todayKey(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function firstOfMonthKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-01'; }
+  function isoWeekKey(dateStr){
+    const d = new Date(dateStr + 'T00:00:00');
+    const dt = new Date(d);
+    dt.setDate(dt.getDate() + (1 - (dt.getDay() === 0 ? 7 : dt.getDay())));
+    const year = dt.getFullYear();
+    const firstThursday = new Date(year, 0, 1);
+    while (firstThursday.getDay() !== 4) firstThursday.setDate(firstThursday.getDate()+1);
+    const week = 1 + Math.round((dt - firstThursday) / (7*86400000));
+    return year + '-W' + String(week).padStart(2,'0');
+  }
+  function monthKey(dateStr){ return dateStr.slice(0,7); }
+  function fmt(n){ return (n === null || n === undefined) ? '\u2014' : n.toLocaleString(); }
+  function colorVar(colorToken){ return getComputedStyle(document.documentElement).getPropertyValue(colorToken.replace('var(','').replace(')','')).trim() || '#888'; }
+
+  async function loadHistory(){
+    try {
+      const res = await fetch('./data/history.json', { cache: 'no-store' });
+      history = res.ok ? await res.json() : [];
+      history.sort((a,b) => a.date.localeCompare(b.date));
+    } catch(e) { history = []; }
+  }
+
+  function bucketHistory(view){
+    if (view === 'daily') return history.slice(-30);
+    const keyFn = view === 'weekly' ? isoWeekKey : monthKey;
+    const buckets = {};
+    history.forEach(entry => { buckets[keyFn(entry.date)] = entry; });
+    return Object.keys(buckets).sort().map(k => Object.assign({ bucketLabel: k }, buckets[k])).slice(-18);
+  }
+
+  function drawChart(canvas, rows, labelKey){
+    if (chart) chart.destroy();
+    if (!rows.length || !window.Chart) return;
+    chart = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: rows.map(r => r[labelKey] || r.date),
+        datasets: Object.keys(SEGMENTS).map(k => ({
+          label: SEGMENTS[k].name,
+          data: rows.map(r => r[k] ?? null),
+          borderColor: colorVar(SEGMENTS[k].color),
+          backgroundColor: 'transparent', tension: 0.25, spanGaps: true
+        }))
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#6f8a8a', font: { size: 10.5, family: 'Bitter' } } } },
+        scales: {
+          x: { ticks: { color: '#6f8a8a', font: { size: 10, family: 'Bitter' } }, grid: { color: '#e8dcd2' } },
+          y: { ticks: { color: '#6f8a8a', font: { size: 10, family: 'Bitter' } }, grid: { color: '#e8dcd2' }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function drawTable(container, rows, labelKey, labelHeader){
+    if (!rows.length){
+      const empty = document.createElement('div');
+      empty.className = 'pm-empty';
+      empty.textContent = 'No snapshots stored for this period yet.';
+      container.appendChild(empty);
+      return;
+    }
+    const table = document.createElement('table');
+    table.className = 'pm-table';
+    table.innerHTML = `
+      <thead><tr><th>${labelHeader}</th>${Object.values(SEGMENTS).map(s => `<th>${s.name}</th>`).join('')}</tr></thead>
+      <tbody>${rows.slice().reverse().map(r => `
+        <tr><td class="num">${r[labelKey] || r.date}</td>${Object.keys(SEGMENTS).map(k => `<td class="num">${fmt(r[k])}</td>`).join('')}</tr>
+      `).join('')}</tbody>
+    `;
+    container.appendChild(table);
+  }
+
+  function renderMeterAndCards(latest){
+    const keys = Object.keys(SEGMENTS);
+    const total = keys.reduce((s,k) => s + (latest[k] || 0), 0) || 1;
+
+    const meter = document.createElement('div');
+    meter.className = 'pm-meter';
+    keys.forEach(k => {
+      const seg = document.createElement('div');
+      seg.style.width = (((latest[k] || 0) / total) * 100) + '%';
+      seg.style.background = SEGMENTS[k].color;
+      meter.appendChild(seg);
+    });
+
+    const legend = document.createElement('div');
+    legend.className = 'pm-legend';
+    keys.forEach(k => {
+      const item = document.createElement('span');
+      item.innerHTML = `<span class="dot" style="background:${SEGMENTS[k].color}"></span>${SEGMENTS[k].name}: <b class="num">${fmt(latest[k])}</b>`;
+      legend.appendChild(item);
+    });
+
+    const cards = document.createElement('div');
+    cards.className = 'pm-cards';
+    keys.forEach(k => {
+      const card = document.createElement('div');
+      card.className = 'pm-card';
+      card.innerHTML = `
+        <div class="label">${SEGMENTS[k].name}</div>
+        <div class="value num" style="color:${SEGMENTS[k].color}">${fmt(latest[k])}</div>
+        <div class="bar" style="background:${SEGMENTS[k].color}"></div>
+        ${k === 'failedPaymentAutoCancel' && (latest[k] === null || latest[k] === undefined) ? '<div class="unconfirmed">Needs segment ID in the script</div>' : ''}
+      `;
+      cards.appendChild(card);
+    });
+
+    return { meter, legend, cards };
+  }
+
+  function renderBucketedView(container){
+    const rows = bucketHistory(currentView);
+    const chartWrap = document.createElement('div');
+    chartWrap.className = 'pm-chart-wrap';
+    const canvas = document.createElement('canvas');
+    chartWrap.appendChild(canvas);
+    container.appendChild(chartWrap);
+    if (!rows.length) chartWrap.innerHTML = '<div class="pm-empty">No history yet.</div>';
+    else drawChart(canvas, rows, 'bucketLabel');
+    drawTable(container, rows, 'bucketLabel', currentView === 'daily' ? 'Date' : currentView === 'weekly' ? 'Week' : 'Month');
+  }
+
+  function renderRangeView(container){
+    if (!rangeFrom) rangeFrom = firstOfMonthKey(new Date());
+    if (!rangeTo) rangeTo = todayKey();
+
+    const controls = document.createElement('div');
+    controls.className = 'pm-range-controls';
+    controls.innerHTML = `
+      <label>From <input type="date" id="pm-range-from" value="${rangeFrom}"></label>
+      <label>To <input type="date" id="pm-range-to" value="${rangeTo}"></label>
+      <button class="pm-refresh-btn" id="pm-range-apply" type="button">Show range</button>
+      <div class="pm-range-presets">
+        <button type="button" data-preset="this-week">This week</button>
+        <button type="button" data-preset="last-week">Last week</button>
+        <button type="button" data-preset="this-month">This month</button>
+        <button type="button" data-preset="last-month">Last month</button>
+      </div>
+    `;
+    container.appendChild(controls);
+
+    const rows = history.filter(h => h.date >= rangeFrom && h.date <= rangeTo);
+
+    if (rows.length){
+      const first = rows[0], last = rows[rows.length - 1];
+      const summary = document.createElement('div');
+      summary.className = 'pm-cards';
+      Object.keys(SEGMENTS).forEach(k => {
+        const delta = (last[k] ?? 0) - (first[k] ?? 0);
+        const sign = delta > 0 ? '+' : '';
+        const card = document.createElement('div');
+        card.className = 'pm-card';
+        card.innerHTML = `
+          <div class="label">${SEGMENTS[k].name}</div>
+          <div class="value num" style="color:${SEGMENTS[k].color}">${fmt(last[k])}</div>
+          <div class="bar" style="background:${SEGMENTS[k].color}"></div>
+          <div class="delta">${first.date} \u2192 ${last.date}: <span class="num">${sign}${delta}</span></div>
+        `;
+        summary.appendChild(card);
+      });
+      container.appendChild(summary);
+    }
+
+    const chartWrap = document.createElement('div');
+    chartWrap.className = 'pm-chart-wrap';
+    const canvas = document.createElement('canvas');
+    chartWrap.appendChild(canvas);
+    container.appendChild(chartWrap);
+    if (!rows.length) chartWrap.innerHTML = '<div class="pm-empty">No snapshots stored in that range yet.</div>';
+    else drawChart(canvas, rows, 'date');
+    drawTable(container, rows, 'date', 'Date');
+
+    document.getElementById('pm-range-apply').addEventListener('click', () => {
+      rangeFrom = document.getElementById('pm-range-from').value;
+      rangeTo = document.getElementById('pm-range-to').value;
+      renderAll();
+    });
+    controls.querySelectorAll('[data-preset]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const now = new Date();
+        if (btn.dataset.preset === 'this-week'){
+          const start = new Date(now); start.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+          rangeFrom = start.toISOString().slice(0,10); rangeTo = todayKey();
+        } else if (btn.dataset.preset === 'last-week'){
+          const start = new Date(now); start.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1) - 7);
+          const end = new Date(start); end.setDate(start.getDate() + 6);
+          rangeFrom = start.toISOString().slice(0,10); rangeTo = end.toISOString().slice(0,10);
+        } else if (btn.dataset.preset === 'this-month'){
+          rangeFrom = firstOfMonthKey(now); rangeTo = todayKey();
+        } else if (btn.dataset.preset === 'last-month'){
+          const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          rangeFrom = firstOfMonthKey(lm);
+          rangeTo = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0,10);
+        }
+        renderAll();
+      });
+    });
+  }
+
+  function renderAll(){
+    root.innerHTML = '';
+    const latest = history.length ? history[history.length - 1] : null;
+
+    const brand = document.createElement('div');
+    brand.className = 'pm-brand';
+    brand.innerHTML = `<img class="logo" src="./assets/pm-logo.png" alt="Project Members">`;
+    root.appendChild(brand);
+
+    const flourish = document.createElement('div');
+    flourish.className = 'pm-flourish';
+    flourish.innerHTML = `<img src="./assets/flourish.png" alt="">`;
+    root.appendChild(flourish);
+
+    const header = document.createElement('div');
+    header.className = 'pm-header';
+    header.innerHTML = `
+      <div>
+        <h1 class="display">Status Dashboard</h1>
+        <div class="sub">Synced daily from Flodesk via GitHub Actions</div>
+      </div>
+      <div class="pm-meta">
+        <div>Last snapshot: <span class="num">${latest ? latest.date : '\u2014'}</span></div>
+        <button class="pm-refresh-btn" id="pm-reload">Reload data</button>
+      </div>
+    `;
+    root.appendChild(header);
+
+    if (latest){
+      const { meter, legend, cards } = renderMeterAndCards(latest);
+      root.appendChild(meter); root.appendChild(legend); root.appendChild(cards);
+    } else {
+      const empty = document.createElement('div');
+      empty.className = 'pm-empty';
+      empty.textContent = 'No data yet. Run the "Daily Project Members snapshot" workflow once from the Actions tab to seed this.';
+      root.appendChild(empty);
+    }
+
+    const controls = document.createElement('div');
+    controls.className = 'pm-controls';
+    controls.innerHTML = `
+      <div class="pm-tabs" id="pm-tabs">
+        <button data-view="daily">Daily</button>
+        <button data-view="weekly">Weekly</button>
+        <button data-view="monthly">Monthly</button>
+        <button data-view="custom">Custom range</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim)">${history.length} day${history.length===1?'':'s'} of history</div>
+    `;
+    root.appendChild(controls);
+    controls.querySelectorAll('button[data-view]').forEach(btn => {
+      if (btn.dataset.view === currentView) btn.classList.add('active');
+      btn.addEventListener('click', () => { currentView = btn.dataset.view; renderAll(); });
+    });
+
+    if (currentView === 'custom') renderRangeView(root);
+    else renderBucketedView(root);
+
+    const foot = document.createElement('div');
+    foot.className = 'pm-footnote';
+    foot.innerHTML = `New numbers land once a day (6am ET) when the GitHub Action runs, or whenever it's triggered manually from the Actions tab. This page reads <span class="num">data/history.json</span> \u2014 reload to see the latest committed snapshot.`;
+    root.appendChild(foot);
+
+    document.getElementById('pm-reload').addEventListener('click', async () => { await loadHistory(); renderAll(); });
+  }
+
+  (async function init(){
+    root.innerHTML = '<div style="padding:40px;color:#6f8a8a;">Loading\u2026</div>';
+    await loadHistory();
+    renderAll();
+  })();
+})();
+</script>
+</body>
+</html>
