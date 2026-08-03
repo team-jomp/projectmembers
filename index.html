@@ -311,16 +311,6 @@
     root.innerHTML = '';
     const latest = history.length ? history[history.length - 1] : null;
 
-    const brand = document.createElement('div');
-    brand.className = 'pm-brand';
-    brand.innerHTML = `<img class="logo" src="./assets/pm-logo.png" alt="Project Members">`;
-    root.appendChild(brand);
-
-    const flourish = document.createElement('div');
-    flourish.className = 'pm-flourish';
-    flourish.innerHTML = `<img src="./assets/flourish.png" alt="">`;
-    root.appendChild(flourish);
-
     const header = document.createElement('div');
     header.className = 'pm-header';
     header.innerHTML = `
