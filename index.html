@@ -318,9 +318,8 @@
         <h1 class="display">Status Dashboard</h1>
         <div class="sub">Synced daily from Flodesk via GitHub Actions</div>
       </div>
-      <div class="pm-meta">
+     <div class="pm-meta">
         <div>Last snapshot: <span class="num">${latest ? latest.date : '\u2014'}</span></div>
-        <button class="pm-refresh-btn" id="pm-reload">Reload data</button>
       </div>
     `;
     root.appendChild(header);
@@ -360,7 +359,6 @@
     foot.innerHTML = `New numbers land once a day (6am ET) when the GitHub Action runs, or whenever it's triggered manually from the Actions tab. This page reads <span class="num">data/history.json</span> \u2014 reload to see the latest committed snapshot.`;
     root.appendChild(foot);
 
-    document.getElementById('pm-reload').addEventListener('click', async () => { await loadHistory(); renderAll(); });
   }
 
   (async function init(){
