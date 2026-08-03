@@ -39,7 +39,7 @@ const SEGMENTS = {
   cancelledTemp:           '654a7361a6d7eee9a42d2866', // [Project Members] Cancelled - Temp Segment
   cancelled:               '6671d4375a2c31dd0fcc46f9', // Project Members Cancelled
   failedPaymentNotice:     '67c344b1ef0764cc419cd366', // [Project Members] 1st Failed Payment Notification
-  failedPaymentAutoCancel: '', // TODO: paste in the "[Project Members] Failed Payment > Auto Cancel" segment id
+  failedPaymentAutoCancel: '651c30bcf313ee03defff341?backTo=L3NlZ21lbnRzP3NlYXJjaD1jYW5jZWwmcGFnZT0x',
 };
 
 const AUTH_HEADER = 'Basic ' + Buffer.from(`${API_KEY}:`).toString('base64');
