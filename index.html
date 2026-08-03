@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Project Members — Status Dashboard</title>
+<title>Mini Makers Club — Status Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Bitter:wght@400;500;600;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
@@ -17,11 +17,8 @@
     --teal: #62a1a1;
     --rust: #9b614c;
     --active: #62a1a1;
-    --paused: #cbaba5;
-    --grace: #9b614c;
-    --cancelled: #7a4a3a;
-    --failed1: #215757;
-    --failed2: #143d3d;
+    --canceled: #9b614c;
+    --failed: #cbaba5;
     --accent: #62a1a1;
   }
   * { box-sizing: border-box; }
@@ -30,76 +27,71 @@
   .num { font-variant-numeric: tabular-nums; }
   .wrap { max-width: 1100px; margin: 0 auto; }
 
-  .pm-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
-  .pm-brand img.logo { height: 46px; width: auto; }
-  .pm-flourish { opacity: 0.55; margin: -6px 0 18px 2px; }
-  .pm-flourish img { height: 28px; width: auto; transform: scaleX(-1); }
+  .mmc-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+  .mmc-brand img.logo { height: 46px; width: auto; }
+  .mmc-flourish { opacity: 0.55; margin: -6px 0 18px 2px; }
+  .mmc-flourish img { height: 28px; width: auto; transform: scaleX(-1); }
 
-  .pm-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; }
-  .pm-header h1 { font-size: 24px; margin: 0 0 4px; font-weight: 400; color: var(--text); }
-  .pm-header .sub { color: var(--text-dim); font-size: 13px; }
-  .pm-meta { text-align: right; font-size: 12px; color: var(--text-dim); }
-  .pm-refresh-btn { margin-top: 6px; background: var(--teal); color: #fff; border: none; padding: 8px 16px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: 'Bitter', serif; }
-  .pm-refresh-btn:hover { filter: brightness(1.08); }
+  .mmc-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; }
+  .mmc-header h1 { font-size: 24px; margin: 0 0 4px; font-weight: 400; color: var(--text); }
+  .mmc-header .sub { color: var(--text-dim); font-size: 13px; }
+  .mmc-meta { text-align: right; font-size: 12px; color: var(--text-dim); }
+  .mmc-refresh-btn { margin-top: 6px; background: var(--teal); color: #fff; border: none; padding: 8px 16px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: 'Bitter', serif; }
+  .mmc-refresh-btn:hover { filter: brightness(1.08); }
 
-  .pm-meter { display: flex; height: 34px; border-radius: 7px; overflow: hidden; margin-bottom: 8px; border: 1px solid var(--panel-border); }
-  .pm-meter div { transition: width 0.4s ease; }
-  .pm-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-dim); margin-bottom: 26px; }
-  .pm-legend span.dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  .mmc-meter { display: flex; height: 34px; border-radius: 7px; overflow: hidden; margin-bottom: 8px; border: 1px solid var(--panel-border); }
+  .mmc-meter div { transition: width 0.4s ease; }
+  .mmc-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-dim); margin-bottom: 26px; }
+  .mmc-legend span.dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
 
-  .pm-cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 28px; }
-  @media (max-width: 900px) { .pm-cards { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 560px) { .pm-cards { grid-template-columns: repeat(2, 1fr); } }
-  .pm-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 14px 14px 12px; box-shadow: 0 1px 3px rgba(33,87,87,0.05); }
-  .pm-card .label { font-size: 10.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; font-weight: 600; }
-  .pm-card .value { font-size: 26px; font-weight: 700; line-height: 1; }
-  .pm-card .bar { height: 3px; border-radius: 2px; margin-top: 10px; }
-  .pm-card .unconfirmed { font-size: 10px; color: var(--rust); margin-top: 6px; }
-  .pm-card .delta { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+  .mmc-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+  @media (max-width: 560px) { .mmc-cards { grid-template-columns: 1fr; } }
+  .mmc-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 14px 14px 12px; box-shadow: 0 1px 3px rgba(33,87,87,0.05); }
+  .mmc-card .label { font-size: 10.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; font-weight: 600; }
+  .mmc-card .value { font-size: 26px; font-weight: 700; line-height: 1; }
+  .mmc-card .bar { height: 3px; border-radius: 2px; margin-top: 10px; }
+  .mmc-card .delta { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
 
-  .pm-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
-  .pm-tabs { display: flex; gap: 6px; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px; padding: 3px; }
-  .pm-tabs button { background: none; border: none; color: var(--text-dim); font-family: 'Bitter', serif; font-size: 12.5px; padding: 6px 14px; border-radius: 6px; cursor: pointer; }
-  .pm-tabs button.active { background: var(--teal); color: #fff; font-weight: 600; }
+  .mmc-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .mmc-tabs { display: flex; gap: 6px; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px; padding: 3px; }
+  .mmc-tabs button { background: none; border: none; color: var(--text-dim); font-family: 'Bitter', serif; font-size: 12.5px; padding: 6px 14px; border-radius: 6px; cursor: pointer; }
+  .mmc-tabs button.active { background: var(--teal); color: #fff; font-weight: 600; }
 
-  .pm-range-controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 12.5px; }
-  .pm-range-controls label { display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
-  .pm-range-controls input[type="date"] { background: var(--bg); border: 1px solid var(--panel-border); color: var(--text); border-radius: 6px; padding: 5px 8px; font-family: 'Bitter', serif; font-size: 12.5px; }
-  .pm-range-presets { display: flex; gap: 6px; }
-  .pm-range-presets button { background: transparent; border: 1px solid var(--panel-border); color: var(--text-dim); border-radius: 6px; padding: 4px 10px; font-size: 11.5px; cursor: pointer; font-family: 'Bitter', serif; }
-  .pm-range-presets button:hover { border-color: var(--teal); color: var(--text); }
+  .mmc-range-controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 12.5px; }
+  .mmc-range-controls label { display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
+  .mmc-range-controls input[type="date"] { background: var(--bg); border: 1px solid var(--panel-border); color: var(--text); border-radius: 6px; padding: 5px 8px; font-family: 'Bitter', serif; font-size: 12.5px; }
+  .mmc-range-presets { display: flex; gap: 6px; }
+  .mmc-range-presets button { background: transparent; border: 1px solid var(--panel-border); color: var(--text-dim); border-radius: 6px; padding: 4px 10px; font-size: 11.5px; cursor: pointer; font-family: 'Bitter', serif; }
+  .mmc-range-presets button:hover { border-color: var(--teal); color: var(--text); }
 
-  .pm-chart-wrap { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 16px; margin-bottom: 22px; height: 260px; }
+  .mmc-chart-wrap { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 16px; margin-bottom: 22px; height: 260px; }
 
-  table.pm-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  table.pm-table th, table.pm-table td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--panel-border); }
-  table.pm-table th:first-child, table.pm-table td:first-child { text-align: left; }
-  table.pm-table th { color: var(--text-dim); font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; }
-  table.pm-table tbody tr:hover { background: rgba(98,161,161,0.06); }
+  table.mmc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.mmc-table th, table.mmc-table td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--panel-border); }
+  table.mmc-table th:first-child, table.mmc-table td:first-child { text-align: left; }
+  table.mmc-table th { color: var(--text-dim); font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  table.mmc-table tbody tr:hover { background: rgba(98,161,161,0.06); }
 
-  .pm-footnote { margin-top: 20px; font-size: 11.5px; color: var(--text-dim); line-height: 1.6; border-top: 1px solid var(--panel-border); padding-top: 14px; }
-  .pm-empty { color: var(--text-dim); font-size: 13px; padding: 20px 0; }
+  .mmc-footnote { margin-top: 20px; font-size: 11.5px; color: var(--text-dim); line-height: 1.6; border-top: 1px solid var(--panel-border); padding-top: 14px; }
+  .mmc-empty { color: var(--text-dim); font-size: 13px; padding: 20px 0; }
 </style>
 </head>
 <body>
-<div class="wrap" id="pm-dash-root"></div>
+<div class="wrap" id="mmc-dash-root"></div>
 
 <script>
 (function(){
   const SEGMENTS = {
-    active:                  { name: 'Active',                        color: 'var(--active)' },
-    paused:                  { name: 'Paused',                        color: 'var(--paused)' },
-    cancelledTemp:           { name: 'Cancelled (grace period)',      color: 'var(--grace)' },
-    cancelled:               { name: 'Cancelled',                     color: 'var(--cancelled)' },
-    failedPaymentNotice:     { name: '1st Failed Payment Notice',      color: 'var(--failed1)' },
-    failedPaymentAutoCancel: { name: 'Failed Payment \u2192 Auto Cancel', color: 'var(--failed2)' }
+    active:         { name: 'Active',          color: 'var(--active)' },
+    canceled:       { name: 'Canceled',        color: 'var(--canceled)' },
+    failedPayments: { name: 'Failed Payments', color: 'var(--failed)' }
   };
   let chart = null;
   let currentView = 'daily';
   let rangeFrom = null, rangeTo = null;
   let history = [];
 
-  const root = document.getElementById('pm-dash-root');
+  const root = document.getElementById('mmc-dash-root');
 
   function todayKey(){
     const d = new Date();
@@ -117,7 +109,7 @@
     return year + '-W' + String(week).padStart(2,'0');
   }
   function monthKey(dateStr){ return dateStr.slice(0,7); }
-  function fmt(n){ return (n === null || n === undefined) ? '\u2014' : n.toLocaleString(); }
+  function fmt(n){ return (n === null || n === undefined) ? '—' : n.toLocaleString(); }
   function colorVar(colorToken){ return getComputedStyle(document.documentElement).getPropertyValue(colorToken.replace('var(','').replace(')','')).trim() || '#888'; }
 
   async function loadHistory(){
@@ -164,13 +156,13 @@
   function drawTable(container, rows, labelKey, labelHeader){
     if (!rows.length){
       const empty = document.createElement('div');
-      empty.className = 'pm-empty';
+      empty.className = 'mmc-empty';
       empty.textContent = 'No snapshots stored for this period yet.';
       container.appendChild(empty);
       return;
     }
     const table = document.createElement('table');
-    table.className = 'pm-table';
+    table.className = 'mmc-table';
     table.innerHTML = `
       <thead><tr><th>${labelHeader}</th>${Object.values(SEGMENTS).map(s => `<th>${s.name}</th>`).join('')}</tr></thead>
       <tbody>${rows.slice().reverse().map(r => `
@@ -185,7 +177,7 @@
     const total = keys.reduce((s,k) => s + (latest[k] || 0), 0) || 1;
 
     const meter = document.createElement('div');
-    meter.className = 'pm-meter';
+    meter.className = 'mmc-meter';
     keys.forEach(k => {
       const seg = document.createElement('div');
       seg.style.width = (((latest[k] || 0) / total) * 100) + '%';
@@ -194,7 +186,7 @@
     });
 
     const legend = document.createElement('div');
-    legend.className = 'pm-legend';
+    legend.className = 'mmc-legend';
     keys.forEach(k => {
       const item = document.createElement('span');
       item.innerHTML = `<span class="dot" style="background:${SEGMENTS[k].color}"></span>${SEGMENTS[k].name}: <b class="num">${fmt(latest[k])}</b>`;
@@ -202,15 +194,14 @@
     });
 
     const cards = document.createElement('div');
-    cards.className = 'pm-cards';
+    cards.className = 'mmc-cards';
     keys.forEach(k => {
       const card = document.createElement('div');
-      card.className = 'pm-card';
+      card.className = 'mmc-card';
       card.innerHTML = `
         <div class="label">${SEGMENTS[k].name}</div>
         <div class="value num" style="color:${SEGMENTS[k].color}">${fmt(latest[k])}</div>
         <div class="bar" style="background:${SEGMENTS[k].color}"></div>
-        ${k === 'failedPaymentAutoCancel' && (latest[k] === null || latest[k] === undefined) ? '<div class="unconfirmed">Needs segment ID in the script</div>' : ''}
       `;
       cards.appendChild(card);
     });
@@ -221,11 +212,11 @@
   function renderBucketedView(container){
     const rows = bucketHistory(currentView);
     const chartWrap = document.createElement('div');
-    chartWrap.className = 'pm-chart-wrap';
+    chartWrap.className = 'mmc-chart-wrap';
     const canvas = document.createElement('canvas');
     chartWrap.appendChild(canvas);
     container.appendChild(chartWrap);
-    if (!rows.length) chartWrap.innerHTML = '<div class="pm-empty">No history yet.</div>';
+    if (!rows.length) chartWrap.innerHTML = '<div class="mmc-empty">No history yet.</div>';
     else drawChart(canvas, rows, 'bucketLabel');
     drawTable(container, rows, 'bucketLabel', currentView === 'daily' ? 'Date' : currentView === 'weekly' ? 'Week' : 'Month');
   }
@@ -235,12 +226,12 @@
     if (!rangeTo) rangeTo = todayKey();
 
     const controls = document.createElement('div');
-    controls.className = 'pm-range-controls';
+    controls.className = 'mmc-range-controls';
     controls.innerHTML = `
-      <label>From <input type="date" id="pm-range-from" value="${rangeFrom}"></label>
-      <label>To <input type="date" id="pm-range-to" value="${rangeTo}"></label>
-      <button class="pm-refresh-btn" id="pm-range-apply" type="button">Show range</button>
-      <div class="pm-range-presets">
+      <label>From <input type="date" id="mmc-range-from" value="${rangeFrom}"></label>
+      <label>To <input type="date" id="mmc-range-to" value="${rangeTo}"></label>
+      <button class="mmc-refresh-btn" id="mmc-range-apply" type="button">Show range</button>
+      <div class="mmc-range-presets">
         <button type="button" data-preset="this-week">This week</button>
         <button type="button" data-preset="last-week">Last week</button>
         <button type="button" data-preset="this-month">This month</button>
@@ -254,35 +245,43 @@
     if (rows.length){
       const first = rows[0], last = rows[rows.length - 1];
       const summary = document.createElement('div');
-      summary.className = 'pm-cards';
+      summary.className = 'mmc-cards';
       Object.keys(SEGMENTS).forEach(k => {
         const delta = (last[k] ?? 0) - (first[k] ?? 0);
         const sign = delta > 0 ? '+' : '';
         const card = document.createElement('div');
-        card.className = 'pm-card';
+        card.className = 'mmc-card';
         card.innerHTML = `
           <div class="label">${SEGMENTS[k].name}</div>
           <div class="value num" style="color:${SEGMENTS[k].color}">${fmt(last[k])}</div>
           <div class="bar" style="background:${SEGMENTS[k].color}"></div>
-          <div class="delta">${first.date} \u2192 ${last.date}: <span class="num">${sign}${delta}</span></div>
+          <div class="delta">${first.date} → ${last.date}: <span class="num">${sign}${delta}</span></div>
         `;
         summary.appendChild(card);
       });
       container.appendChild(summary);
+
+      const sumRow = document.createElement('div');
+      sumRow.className = 'mmc-empty';
+      sumRow.style.paddingTop = '0';
+      const canceledSum = rows.reduce((s,r) => s + (r.canceled ?? 0), 0);
+      const failedSum = rows.reduce((s,r) => s + (r.failedPayments ?? 0), 0);
+      sumRow.innerHTML = `Sum across range — Canceled: <b class="num">${canceledSum}</b> &nbsp;·&nbsp; Failed Payments: <b class="num">${failedSum}</b>`;
+      container.appendChild(sumRow);
     }
 
     const chartWrap = document.createElement('div');
-    chartWrap.className = 'pm-chart-wrap';
+    chartWrap.className = 'mmc-chart-wrap';
     const canvas = document.createElement('canvas');
     chartWrap.appendChild(canvas);
     container.appendChild(chartWrap);
-    if (!rows.length) chartWrap.innerHTML = '<div class="pm-empty">No snapshots stored in that range yet.</div>';
+    if (!rows.length) chartWrap.innerHTML = '<div class="mmc-empty">No snapshots stored in that range yet.</div>';
     else drawChart(canvas, rows, 'date');
     drawTable(container, rows, 'date', 'Date');
 
-    document.getElementById('pm-range-apply').addEventListener('click', () => {
-      rangeFrom = document.getElementById('pm-range-from').value;
-      rangeTo = document.getElementById('pm-range-to').value;
+    document.getElementById('mmc-range-apply').addEventListener('click', () => {
+      rangeFrom = document.getElementById('mmc-range-from').value;
+      rangeTo = document.getElementById('mmc-range-to').value;
       renderAll();
     });
     controls.querySelectorAll('[data-preset]').forEach(btn => {
@@ -312,15 +311,15 @@
     const latest = history.length ? history[history.length - 1] : null;
 
     const header = document.createElement('div');
-    header.className = 'pm-header';
+    header.className = 'mmc-header';
     header.innerHTML = `
       <div>
-        <h1 class="display">Status Dashboard</h1>
+        <h1 class="display">Mini Makers Club — Status Dashboard</h1>
         <div class="sub">Synced daily from Flodesk via GitHub Actions</div>
       </div>
-      <div class="pm-meta">
-        <div>Last snapshot: <span class="num">${latest ? latest.date : '\u2014'}</span></div>
-        <button class="pm-refresh-btn" id="pm-reload">Reload data</button>
+      <div class="mmc-meta">
+        <div>Last snapshot: <span class="num">${latest ? latest.date : '—'}</span></div>
+        <button class="mmc-refresh-btn" id="mmc-reload">Reload data</button>
       </div>
     `;
     root.appendChild(header);
@@ -330,15 +329,15 @@
       root.appendChild(meter); root.appendChild(legend); root.appendChild(cards);
     } else {
       const empty = document.createElement('div');
-      empty.className = 'pm-empty';
-      empty.textContent = 'No data yet. Run the "Daily Project Members snapshot" workflow once from the Actions tab to seed this.';
+      empty.className = 'mmc-empty';
+      empty.textContent = 'No data yet. Run the "Daily Mini Makers Club snapshot" workflow once from the Actions tab to seed this.';
       root.appendChild(empty);
     }
 
     const controls = document.createElement('div');
-    controls.className = 'pm-controls';
+    controls.className = 'mmc-controls';
     controls.innerHTML = `
-      <div class="pm-tabs" id="pm-tabs">
+      <div class="mmc-tabs" id="mmc-tabs">
         <button data-view="daily">Daily</button>
         <button data-view="weekly">Weekly</button>
         <button data-view="monthly">Monthly</button>
@@ -356,15 +355,15 @@
     else renderBucketedView(root);
 
     const foot = document.createElement('div');
-    foot.className = 'pm-footnote';
-    foot.innerHTML = `New numbers land once a day (6am ET) when the GitHub Action runs, or whenever it's triggered manually from the Actions tab. This page reads <span class="num">data/history.json</span> \u2014 reload to see the latest committed snapshot.`;
+    foot.className = 'mmc-footnote';
+    foot.innerHTML = `New numbers land once a day (6am ET) when the GitHub Action runs, or whenever it's triggered manually from the Actions tab. Canceled and Failed Payments counts reflect a rolling 24-hour window (contacts sit in those segments for 24 hours before auto-removal), so each day's figure is that day's actual new count — safe to sum across a custom range. This page reads <span class="num">data/history.json</span> — reload to see the latest committed snapshot.`;
     root.appendChild(foot);
 
-    document.getElementById('pm-reload').addEventListener('click', async () => { await loadHistory(); renderAll(); });
+    document.getElementById('mmc-reload').addEventListener('click', async () => { await loadHistory(); renderAll(); });
   }
 
   (async function init(){
-    root.innerHTML = '<div style="padding:40px;color:#6f8a8a;">Loading\u2026</div>';
+    root.innerHTML = '<div style="padding:40px;color:#6f8a8a;">Loading…</div>';
     await loadHistory();
     renderAll();
   })();
