@@ -16,19 +16,39 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-// The workflow triggers at two possible UTC times to cover both sides of
-// Daylight Saving. Only actually run the work on the trigger that's really
-// 6am in New York right now — the other one just exits quietly.
-// Manual runs (the "Run workflow" button) always run for real.
+// The workflow fires hourly across a wide UTC window so it covers 6am-10pm ET
+// in both Daylight Saving states without needing manual updates twice a year.
+// Only actually run the fetch when the current Eastern hour is one of the
+// 9 target snapshot times below AND today falls inside the launch window —
+// every other hourly trigger exits quietly.
+// Manual runs (the "Run workflow" button) always run for real, regardless of
+// date or hour, so you can test any time.
 const forceRun = process.env.FORCE_RUN === 'true';
-const currentEasternHour = new Intl.DateTimeFormat('en-US', {
-  timeZone: 'America/New_York',
-  hour: '2-digit',
-  hour12: false
-}).format(new Date());
 
-if (!forceRun && currentEasternHour !== '06') {
-  console.log(`Skipping — it's ${currentEasternHour}:00 in New York, not 6am. The other scheduled trigger will handle it.`);
+// Launch window: Aug 19, 2026 12:00am ET through Sep 19, 2026 11:59pm ET.
+// After this window, scheduled runs will skip automatically — no need to
+// remember to disable the workflow.
+const LAUNCH_START_DATE = '2026-08-19';
+const LAUNCH_END_DATE = '2026-09-19';
+
+const TARGET_HOURS = ['06', '08', '10', '12', '14', '16', '18', '20', '22'];
+
+const nowEastern = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York',
+  year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', hour12: false
+}).formatToParts(new Date());
+const partsByType = Object.fromEntries(nowEastern.map(p => [p.type, p.value]));
+const currentEasternDate = `${partsByType.year}-${partsByType.month}-${partsByType.day}`;
+const currentEasternHour = partsByType.hour;
+
+if (!forceRun && (currentEasternDate < LAUNCH_START_DATE || currentEasternDate > LAUNCH_END_DATE)) {
+  console.log(`Skipping — ${currentEasternDate} is outside the launch window (${LAUNCH_START_DATE} to ${LAUNCH_END_DATE}).`);
+  process.exit(0);
+}
+
+if (!forceRun && !TARGET_HOURS.includes(currentEasternHour)) {
+  console.log(`Skipping — it's ${currentEasternHour}:00 in New York, not one of the target snapshot hours (${TARGET_HOURS.join(', ')}).`);
   process.exit(0);
 }
 
