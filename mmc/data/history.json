@@ -1,11 +1,5 @@
 [
   {
-    "date": "2026-08-03",
-    "active": 413,
-    "canceled": 10,
-    "failedPayments": 0
-  },
-  {
     "date": "2026-08-04",
     "active": 330,
     "canceled": 0,
