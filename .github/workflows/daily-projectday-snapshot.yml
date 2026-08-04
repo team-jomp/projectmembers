@@ -1,9 +1,15 @@
-name: Daily Project Day snapshot
+name: Project Day snapshot (every 2 hrs, 6am-10pm ET)
 
 on:
+  # Fires hourly across the full window that covers 6am-10pm ET in BOTH
+  # daylight saving states. The script itself (fetch-flodesk-projectday-snapshot.mjs)
+  # only actually runs the fetch when the current Eastern time matches one of
+  # the 9 target hours (6,8,10,12,14,16,18,20,22) — every other hourly trigger
+  # exits immediately. This means DST shifts are handled automatically without
+  # needing to update this schedule twice a year.
   schedule:
-    - cron: '0 10 * * *'
-    - cron: '0 11 * * *'
+    - cron: '0 10-23 * * *'
+    - cron: '0 0-3 * * *'
   workflow_dispatch: {}
 
 permissions:
@@ -30,5 +36,5 @@ jobs:
           git config user.name "projectday-dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add projectday/data/history.json
-          git diff --cached --quiet || git commit -m "Daily Project Day snapshot: $(date -u +%F)"
+          git diff --cached --quiet || git commit -m "Project Day snapshot: $(date -u +'%F %H:%M UTC')"
           git push
