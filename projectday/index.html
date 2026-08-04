@@ -342,13 +342,24 @@
     const foot = document.createElement('div');
     foot.className = 'pd-footnote';
     foot.innerHTML = `Tracking the Project Day launch window (Aug 19 – Sep 19, 2026). New numbers land every 2 hours between 6am and 10pm ET when the GitHub Action runs, or whenever it's triggered manually from the Actions tab. The 4 cards above show the running cumulative total (matches Flodesk). The table and chart below show new adds per day, week, or month — not the running total.`;
-    root.appendChild(foot);
+ root.appendChild(foot);
+
+    reportHeight();
   }
+
+  function reportHeight(){
+    try {
+      const height = document.documentElement.scrollHeight;
+      window.parent.postMessage({ type: 'pd-dashboard-height', height: height }, '*');
+    } catch(e) {}
+  }
+  window.addEventListener('resize', reportHeight);
 
   (async function init(){
     root.innerHTML = '<div style="padding:40px;color:#6b7f8f;">Loading…</div>';
     await loadHistory();
     renderAll();
+    setTimeout(reportHeight, 300);
   })();
 })();
 </script>
