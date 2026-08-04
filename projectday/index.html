@@ -75,9 +75,9 @@
 (function(){
   const SEGMENTS = {
     ticketsPurchased: { name: 'Tickets Purchased',   color: 'var(--tickets)' },
-    upsellActivated:  { name: 'Upsell Activated',    color: 'var(--upsell)' },
+    upsellActivated:  { name: 'Trial Activated via Upsell', color: 'var(--upsell)' },
     trialActivated:   { name: 'Trial Activated',     color: 'var(--trial)' },
-    newSubscription:  { name: 'New PM Subscription', color: 'var(--signup)' }
+    newSubscription:  { name: 'New PM Subscription (no ticket purchase)', color: 'var(--signup)' }
   };
   let chart = null;
   let currentView = 'daily';
@@ -113,12 +113,37 @@
     } catch(e) { history = []; }
   }
 
+  // history stores cumulative running totals (each entry = "how many, ever,
+  // as of this date"). This converts that into a day-by-day "how many NEW
+  // that day" series, so the table/chart can show adds-per-period instead of
+  // running totals. The first stored day is treated as its own value (there's
+  // no earlier snapshot to diff against).
+  function computeDeltaSeries(rawHistory){
+    return rawHistory.map((entry, i) => {
+      const prev = i > 0 ? rawHistory[i-1] : null;
+      const out = { date: entry.date };
+      Object.keys(SEGMENTS).forEach(k => {
+        const cur = entry[k] ?? 0;
+        const prevVal = prev ? (prev[k] ?? 0) : 0;
+        out[k] = prev ? (cur - prevVal) : cur;
+      });
+      return out;
+    });
+  }
+
   function bucketHistory(view){
-    if (view === 'daily') return history.slice(-30);
+    const deltaSeries = computeDeltaSeries(history);
+    if (view === 'daily') return deltaSeries.slice(-30);
     const keyFn = view === 'weekly' ? isoWeekKey : monthKey;
     const buckets = {};
-    history.forEach(entry => { buckets[keyFn(entry.date)] = entry; });
-    return Object.keys(buckets).sort().map(k => Object.assign({ bucketLabel: k }, buckets[k])).slice(-18);
+    deltaSeries.forEach(entry => {
+      const k = keyFn(entry.date);
+      if (!buckets[k]) buckets[k] = { bucketLabel: k };
+      Object.keys(SEGMENTS).forEach(seg => {
+        buckets[k][seg] = (buckets[k][seg] || 0) + (entry[seg] || 0);
+      });
+    });
+    return Object.keys(buckets).sort().map(k => buckets[k]).slice(-18);
   }
 
   function drawChart(canvas, rows, labelKey){
@@ -226,14 +251,19 @@
       container.appendChild(renderCards(last, first));
     }
 
+    // Table/chart below show day-by-day new adds within the range (not the
+    // running cumulative total) — the cards above already show the net
+    // change across the whole range.
+    const deltaRows = computeDeltaSeries(history).filter(h => h.date >= rangeFrom && h.date <= rangeTo);
+
     const chartWrap = document.createElement('div');
     chartWrap.className = 'pd-chart-wrap';
     const canvas = document.createElement('canvas');
     chartWrap.appendChild(canvas);
     container.appendChild(chartWrap);
-    if (!rows.length) chartWrap.innerHTML = '<div class="pd-empty">No snapshots stored in that range yet.</div>';
-    else drawChart(canvas, rows, 'date');
-    drawTable(container, rows, 'date', 'Date');
+    if (!deltaRows.length) chartWrap.innerHTML = '<div class="pd-empty">No snapshots stored in that range yet.</div>';
+    else drawChart(canvas, deltaRows, 'date');
+    drawTable(container, deltaRows, 'date', 'Date');
 
     document.getElementById('pd-range-apply').addEventListener('click', () => {
       rangeFrom = document.getElementById('pd-range-from').value;
@@ -311,7 +341,7 @@
 
     const foot = document.createElement('div');
     foot.className = 'pd-footnote';
-    foot.innerHTML = `Tracking the Project Day launch window (Aug 19 – Sep 19, 2026). New numbers land every 2 hours between 6am and 10pm ET when the GitHub Action runs, or whenever it's triggered manually from the Actions tab. Each metric is a running total (people generally stay in these segments once added), so the "since" figure on each card and the range view show the change between two points in time, not a sum.`;
+    foot.innerHTML = `Tracking the Project Day launch window (Aug 19 – Sep 19, 2026). New numbers land every 2 hours between 6am and 10pm ET when the GitHub Action runs, or whenever it's triggered manually from the Actions tab. The 4 cards above show the running cumulative total (matches Flodesk). The table and chart below show new adds per day, week, or month — not the running total.`;
     root.appendChild(foot);
   }
 
