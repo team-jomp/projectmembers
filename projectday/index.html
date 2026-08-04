@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laser Craft Fest: Project Day — Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Bitter:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #f7f9fa;
+    --panel-border: #dde3e6;
+    --text: #0E3855;
+    --text-dim: #6b7f8f;
+    --mint: #8DD1C6;
+    --rose: #EAA4A8;
+    --gold: #FECE87;
+    --navy: #0E3855;
+    --tickets: #8DD1C6;
+    --upsell: #EAA4A8;
+    --trial: #FECE87;
+    --signup: #0E3855;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Bitter', Georgia, serif; margin: 0; padding: 28px 24px 48px; }
+  .display { font-family: 'Young Serif', Georgia, serif; }
+  .num { font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+
+  .pd-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; }
+  .pd-header h1 { font-size: 24px; margin: 0 0 4px; font-weight: 400; color: var(--text); }
+  .pd-header .sub { color: var(--text-dim); font-size: 13px; }
+  .pd-meta { text-align: right; font-size: 12px; color: var(--text-dim); }
+
+  .pd-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  @media (max-width: 760px) { .pd-cards { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 420px) { .pd-cards { grid-template-columns: 1fr; } }
+  .pd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 14px 14px 12px; box-shadow: 0 1px 3px rgba(33,87,87,0.05); }
+  .pd-card .label { font-size: 10.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; font-weight: 600; }
+  .pd-card .value { font-size: 26px; font-weight: 700; line-height: 1; }
+  .pd-card .bar { height: 3px; border-radius: 2px; margin-top: 10px; }
+  .pd-card .delta { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+
+  .pd-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .pd-tabs { display: flex; gap: 6px; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px; padding: 3px; }
+  .pd-tabs button { background: none; border: none; color: var(--text-dim); font-family: 'Bitter', serif; font-size: 12.5px; padding: 6px 14px; border-radius: 6px; cursor: pointer; }
+  .pd-tabs button.active { background: var(--navy); color: #fff; font-weight: 600; }
+
+  .pd-range-controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 12.5px; }
+  .pd-range-controls label { display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
+  .pd-range-controls input[type="date"] { background: var(--bg); border: 1px solid var(--panel-border); color: var(--text); border-radius: 6px; padding: 5px 8px; font-family: 'Bitter', serif; font-size: 12.5px; }
+  .pd-range-presets { display: flex; gap: 6px; }
+  .pd-range-presets button { background: transparent; border: 1px solid var(--panel-border); color: var(--text-dim); border-radius: 6px; padding: 4px 10px; font-size: 11.5px; cursor: pointer; font-family: 'Bitter', serif; }
+  .pd-range-presets button:hover { border-color: var(--teal); color: var(--text); }
+  .pd-range-apply { margin-top: 0; background: var(--navy); color: #fff; border: none; padding: 8px 16px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: 'Bitter', serif; }
+  .pd-range-apply:hover { filter: brightness(1.08); }
+
+  .pd-chart-wrap { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 16px; margin-bottom: 22px; height: 260px; }
+
+  table.pd-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.pd-table th, table.pd-table td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--panel-border); }
+  table.pd-table th:first-child, table.pd-table td:first-child { text-align: left; }
+  table.pd-table th { color: var(--text-dim); font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  table.pd-table tbody tr:hover { background: rgba(98,161,161,0.06); }
+
+  .pd-footnote { margin-top: 20px; font-size: 11.5px; color: var(--text-dim); line-height: 1.6; border-top: 1px solid var(--panel-border); padding-top: 14px; }
+  .pd-empty { color: var(--text-dim); font-size: 13px; padding: 20px 0; }
+</style>
+</head>
+<body>
+<div class="wrap" id="pd-dash-root"></div>
+
+<script>
+(function(){
+  const SEGMENTS = {
+    ticketsPurchased: { name: 'Tickets Purchased',   color: 'var(--tickets)' },
+    upsellActivated:  { name: 'Upsell Activated',    color: 'var(--upsell)' },
+    trialActivated:   { name: 'Trial Activated',     color: 'var(--trial)' },
+    newSubscription:  { name: 'New PM Subscription', color: 'var(--signup)' }
+  };
+  let chart = null;
+  let currentView = 'daily';
+  let rangeFrom = null, rangeTo = null;
+  let history = [];
+
+  const root = document.getElementById('pd-dash-root');
+
+  function todayKey(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function firstOfMonthKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-01'; }
+  function isoWeekKey(dateStr){
+    const d = new Date(dateStr + 'T00:00:00');
+    const dt = new Date(d);
+    dt.setDate(dt.getDate() + (1 - (dt.getDay() === 0 ? 7 : dt.getDay())));
+    const year = dt.getFullYear();
+    const firstThursday = new Date(year, 0, 1);
+    while (firstThursday.getDay() !== 4) firstThursday.setDate(firstThursday.getDate()+1);
+    const week = 1 + Math.round((dt - firstThursday) / (7*86400000));
+    return year + '-W' + String(week).padStart(2,'0');
+  }
+  function monthKey(dateStr){ return dateStr.slice(0,7); }
+  function fmt(n){ return (n === null || n === undefined) ? '—' : n.toLocaleString(); }
+  function colorVar(colorToken){ return getComputedStyle(document.documentElement).getPropertyValue(colorToken.replace('var(','').replace(')','')).trim() || '#888'; }
+
+  async function loadHistory(){
+    try {
+      const res = await fetch('./data/history.json', { cache: 'no-store' });
+      history = res.ok ? await res.json() : [];
+      history.sort((a,b) => a.date.localeCompare(b.date));
+    } catch(e) { history = []; }
+  }
+
+  function bucketHistory(view){
+    if (view === 'daily') return history.slice(-30);
+    const keyFn = view === 'weekly' ? isoWeekKey : monthKey;
+    const buckets = {};
+    history.forEach(entry => { buckets[keyFn(entry.date)] = entry; });
+    return Object.keys(buckets).sort().map(k => Object.assign({ bucketLabel: k }, buckets[k])).slice(-18);
+  }
+
+  function drawChart(canvas, rows, labelKey){
+    if (chart) chart.destroy();
+    if (!rows.length || !window.Chart) return;
+    chart = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: rows.map(r => r[labelKey] || r.date),
+        datasets: Object.keys(SEGMENTS).map(k => ({
+          label: SEGMENTS[k].name,
+          data: rows.map(r => r[k] ?? null),
+          borderColor: colorVar(SEGMENTS[k].color),
+          backgroundColor: 'transparent', tension: 0.25, spanGaps: true
+        }))
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#6b7f8f', font: { size: 10.5, family: 'Bitter' } } } },
+        scales: {
+          x: { ticks: { color: '#6b7f8f', font: { size: 10, family: 'Bitter' } }, grid: { color: '#dde3e6' } },
+          y: { ticks: { color: '#6b7f8f', font: { size: 10, family: 'Bitter' } }, grid: { color: '#dde3e6' }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function drawTable(container, rows, labelKey, labelHeader){
+    if (!rows.length){
+      const empty = document.createElement('div');
+      empty.className = 'pd-empty';
+      empty.textContent = 'No snapshots stored for this period yet.';
+      container.appendChild(empty);
+      return;
+    }
+    const table = document.createElement('table');
+    table.className = 'pd-table';
+    table.innerHTML = `
+      <thead><tr><th>${labelHeader}</th>${Object.values(SEGMENTS).map(s => `<th>${s.name}</th>`).join('')}</tr></thead>
+      <tbody>${rows.slice().reverse().map(r => `
+        <tr><td class="num">${r[labelKey] || r.date}</td>${Object.keys(SEGMENTS).map(k => `<td class="num">${fmt(r[k])}</td>`).join('')}</tr>
+      `).join('')}</tbody>
+    `;
+    container.appendChild(table);
+  }
+
+  function renderCards(latest, previous){
+    const cards = document.createElement('div');
+    cards.className = 'pd-cards';
+    Object.keys(SEGMENTS).forEach(k => {
+      const card = document.createElement('div');
+      card.className = 'pd-card';
+      let deltaHtml = '';
+      if (previous){
+        const delta = (latest[k] ?? 0) - (previous[k] ?? 0);
+        const sign = delta > 0 ? '+' : '';
+        deltaHtml = `<div class="delta">since ${previous.date}: <span class="num">${sign}${delta}</span></div>`;
+      }
+      card.innerHTML = `
+        <div class="label">${SEGMENTS[k].name}</div>
+        <div class="value num" style="color:${SEGMENTS[k].color}">${fmt(latest[k])}</div>
+        <div class="bar" style="background:${SEGMENTS[k].color}"></div>
+        ${deltaHtml}
+      `;
+      cards.appendChild(card);
+    });
+    return cards;
+  }
+
+  function renderBucketedView(container){
+    const rows = bucketHistory(currentView);
+    const chartWrap = document.createElement('div');
+    chartWrap.className = 'pd-chart-wrap';
+    const canvas = document.createElement('canvas');
+    chartWrap.appendChild(canvas);
+    container.appendChild(chartWrap);
+    if (!rows.length) chartWrap.innerHTML = '<div class="pd-empty">No history yet.</div>';
+    else drawChart(canvas, rows, 'bucketLabel');
+    drawTable(container, rows, 'bucketLabel', currentView === 'daily' ? 'Date' : currentView === 'weekly' ? 'Week' : 'Month');
+  }
+
+  function renderRangeView(container){
+    if (!rangeFrom) rangeFrom = firstOfMonthKey(new Date());
+    if (!rangeTo) rangeTo = todayKey();
+
+    const controls = document.createElement('div');
+    controls.className = 'pd-range-controls';
+    controls.innerHTML = `
+      <label>From <input type="date" id="pd-range-from" value="${rangeFrom}"></label>
+      <label>To <input type="date" id="pd-range-to" value="${rangeTo}"></label>
+      <button class="pd-range-apply" id="pd-range-apply" type="button">Show range</button>
+      <div class="pd-range-presets">
+        <button type="button" data-preset="this-week">This week</button>
+        <button type="button" data-preset="last-week">Last week</button>
+        <button type="button" data-preset="this-month">This month</button>
+        <button type="button" data-preset="last-month">Last month</button>
+      </div>
+    `;
+    container.appendChild(controls);
+
+    const rows = history.filter(h => h.date >= rangeFrom && h.date <= rangeTo);
+
+    if (rows.length){
+      const first = rows[0], last = rows[rows.length - 1];
+      container.appendChild(renderCards(last, first));
+    }
+
+    const chartWrap = document.createElement('div');
+    chartWrap.className = 'pd-chart-wrap';
+    const canvas = document.createElement('canvas');
+    chartWrap.appendChild(canvas);
+    container.appendChild(chartWrap);
+    if (!rows.length) chartWrap.innerHTML = '<div class="pd-empty">No snapshots stored in that range yet.</div>';
+    else drawChart(canvas, rows, 'date');
+    drawTable(container, rows, 'date', 'Date');
+
+    document.getElementById('pd-range-apply').addEventListener('click', () => {
+      rangeFrom = document.getElementById('pd-range-from').value;
+      rangeTo = document.getElementById('pd-range-to').value;
+      renderAll();
+    });
+    controls.querySelectorAll('[data-preset]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const now = new Date();
+        if (btn.dataset.preset === 'this-week'){
+          const start = new Date(now); start.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+          rangeFrom = start.toISOString().slice(0,10); rangeTo = todayKey();
+        } else if (btn.dataset.preset === 'last-week'){
+          const start = new Date(now); start.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1) - 7);
+          const end = new Date(start); end.setDate(start.getDate() + 6);
+          rangeFrom = start.toISOString().slice(0,10); rangeTo = end.toISOString().slice(0,10);
+        } else if (btn.dataset.preset === 'this-month'){
+          rangeFrom = firstOfMonthKey(now); rangeTo = todayKey();
+        } else if (btn.dataset.preset === 'last-month'){
+          const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          rangeFrom = firstOfMonthKey(lm);
+          rangeTo = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0,10);
+        }
+        renderAll();
+      });
+    });
+  }
+
+  function renderAll(){
+    root.innerHTML = '';
+    const latest = history.length ? history[history.length - 1] : null;
+    const previous = history.length > 1 ? history[history.length - 2] : null;
+
+    const header = document.createElement('div');
+    header.className = 'pd-header';
+    header.innerHTML = `
+      <div>
+        <h1 class="display">Laser Craft Fest: Project Day — Dashboard</h1>
+        <div class="sub">Synced daily from Flodesk via GitHub Actions</div>
+      </div>
+      <div class="pd-meta">
+        <div>Last snapshot: <span class="num">${latest ? latest.date : '—'}</span></div>
+      </div>
+    `;
+    root.appendChild(header);
+
+    if (latest){
+      root.appendChild(renderCards(latest, previous));
+    } else {
+      const empty = document.createElement('div');
+      empty.className = 'pd-empty';
+      empty.textContent = 'No data yet. Run the "Daily Project Day snapshot" workflow once from the Actions tab to seed this.';
+      root.appendChild(empty);
+    }
+
+    const controls = document.createElement('div');
+    controls.className = 'pd-controls';
+    controls.innerHTML = `
+      <div class="pd-tabs" id="pd-tabs">
+        <button data-view="daily">Daily</button>
+        <button data-view="weekly">Weekly</button>
+        <button data-view="monthly">Monthly</button>
+        <button data-view="custom">Custom range</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim)">${history.length} day${history.length===1?'':'s'} of history</div>
+    `;
+    root.appendChild(controls);
+    controls.querySelectorAll('button[data-view]').forEach(btn => {
+      if (btn.dataset.view === currentView) btn.classList.add('active');
+      btn.addEventListener('click', () => { currentView = btn.dataset.view; renderAll(); });
+    });
+
+    if (currentView === 'custom') renderRangeView(root);
+    else renderBucketedView(root);
+
+    const foot = document.createElement('div');
+    foot.className = 'pd-footnote';
+    foot.innerHTML = `New numbers land once a day (6am ET) when the GitHub Action runs, or whenever it's triggered manually from the Actions tab. Each metric is a running total (people generally stay in these segments once added), so the "since" figure on each card and the range view show the change between two points in time, not a sum.`;
+    root.appendChild(foot);
+  }
+
+  (async function init(){
+    root.innerHTML = '<div style="padding:40px;color:#6b7f8f;">Loading…</div>';
+    await loadHistory();
+    renderAll();
+  })();
+})();
+</script>
+</body>
+</html>
