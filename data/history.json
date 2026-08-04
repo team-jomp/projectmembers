@@ -1,2 +1,11 @@
 [
+  {
+    "date": "2026-08-04",
+    "active": 231,
+    "paused": 7,
+    "cancelledTemp": 7,
+    "cancelled": 0,
+    "failedPaymentNotice": 0,
+    "failedPaymentAutoCancel": 0
+  }
 ]
