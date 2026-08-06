@@ -2,8 +2,7 @@ name: Daily Project Members snapshot
 
 on:
   schedule:
-    - cron: '0 10 * * *'
-    - cron: '0 11 * * *'
+    - cron: '7 9-12 * * *'
   workflow_dispatch: {}
 
 permissions:
