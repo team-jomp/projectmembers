@@ -4,5 +4,11 @@
     "active": 330,
     "canceled": 0,
     "failedPayments": 0
+  },
+  {
+    "date": "2026-08-06",
+    "active": 327,
+    "canceled": 0,
+    "failedPayments": 0
   }
 ]
