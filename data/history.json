@@ -25,5 +25,14 @@
     "cancelled": 4,
     "failedPaymentNotice": 1,
     "failedPaymentAutoCancel": 0
+  },
+  {
+    "date": "2026-08-08",
+    "active": 214,
+    "paused": 7,
+    "cancelledTemp": 4,
+    "cancelled": 4,
+    "failedPaymentNotice": 0,
+    "failedPaymentAutoCancel": 0
   }
 ]
