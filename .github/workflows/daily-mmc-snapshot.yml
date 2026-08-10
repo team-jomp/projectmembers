@@ -1,9 +1,8 @@
 name: Daily Mini Makers Club snapshot
 
 on:
-  schedule:
-    - cron: '0 10 * * *'
-    - cron: '0 11 * * *'
+schedule:
+    - cron: '7 9-12 * * *'
   workflow_dispatch: {}
 
 permissions:
