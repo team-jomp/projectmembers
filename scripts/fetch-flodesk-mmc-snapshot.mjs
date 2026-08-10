@@ -15,9 +15,11 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-// The workflow triggers at two possible UTC times to cover both sides of
-// Daylight Saving. Only actually run the work on the trigger that's really
-// 6am in New York right now — the other one just exits quietly.
+// The workflow triggers four times to cover both sides of Daylight Saving
+// and give GitHub's flaky cron scheduler multiple chances to actually fire.
+// Only actually run the work if it's currently 5am or 6am in New York —
+// a tight 2-hour window, not "any time today" — so day-to-day comparisons
+// stay meaningful even if the exact minute drifts a bit.
 // Manual runs (the "Run workflow" button) always run for real.
 const forceRun = process.env.FORCE_RUN === 'true';
 const currentEasternHour = new Intl.DateTimeFormat('en-US', {
@@ -25,9 +27,10 @@ const currentEasternHour = new Intl.DateTimeFormat('en-US', {
   hour: '2-digit',
   hour12: false
 }).format(new Date());
+const inWindow = currentEasternHour === '05' || currentEasternHour === '06';
 
-if (!forceRun && currentEasternHour !== '06') {
-  console.log(`Skipping — it's ${currentEasternHour}:00 in New York, not 6am. The other scheduled trigger will handle it.`);
+if (!forceRun && !inWindow) {
+  console.log(`Skipping — it's ${currentEasternHour}:00 in New York, outside the 5-7am window. Another scheduled trigger will handle it.`);
   process.exit(0);
 }
 
@@ -65,15 +68,9 @@ async function getSegmentCount(segmentId) {
 }
 
 async function main() {
-  const counts = {};
-  for (const [key, id] of Object.entries(SEGMENTS)) {
-    counts[key] = await getSegmentCount(id);
-  }
-
   const today = new Date().toISOString().slice(0, 10); // UTC date, YYYY-MM-DD
-  const entry = { date: today, ...counts };
 
-  const dataDir = path.join(process.cwd(), 'mmc', 'data');
+  const dataDir = path.join(process.cwd(), 'data');
   const historyPath = path.join(dataDir, 'history.json');
   await mkdir(dataDir, { recursive: true });
 
@@ -83,6 +80,18 @@ async function main() {
   } catch {
     history = [];
   }
+
+  if (!forceRun && history.some(h => h.date === today)) {
+    console.log(`Already have a snapshot for ${today} — skipping to avoid overwriting it with a slightly later pull.`);
+    return;
+  }
+
+  const counts = {};
+  for (const [key, id] of Object.entries(SEGMENTS)) {
+    counts[key] = await getSegmentCount(id);
+  }
+
+  const entry = { date: today, ...counts };
 
   const idx = history.findIndex(h => h.date === today);
   if (idx >= 0) history[idx] = entry; else history.push(entry);
