@@ -43,9 +43,9 @@
   },
   {
     "date": "2026-08-24",
-    "ticketsPurchased": 12,
-    "upsellActivated": 3,
+    "ticketsPurchased": 15,
+    "upsellActivated": 5,
     "trialActivated": 0,
-    "newSubscription": 3
+    "newSubscription": 4
   }
 ]
