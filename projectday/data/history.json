@@ -75,5 +75,12 @@
     "upsellActivated": 12,
     "trialActivated": 1,
     "newSubscription": 4
+  },
+  {
+    "date": "2026-08-30",
+    "ticketsPurchased": 28,
+    "upsellActivated": 12,
+    "trialActivated": 1,
+    "newSubscription": 4
   }
 ]
