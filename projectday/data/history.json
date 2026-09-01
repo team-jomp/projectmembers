@@ -92,9 +92,9 @@
   },
   {
     "date": "2026-09-01",
-    "ticketsPurchased": 38,
-    "upsellActivated": 15,
-    "trialActivated": 1,
+    "ticketsPurchased": 84,
+    "upsellActivated": 29,
+    "trialActivated": 3,
     "newSubscription": 4
   }
 ]
